@@ -1,0 +1,38 @@
+# Git
+.git
+.gitignore
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+log/
+*.log
+
+# Compiled binaries
+bin/
+dist/
+*.exe
+*.test
+
+# Test coverage
+coverage.out
+coverage.html
+
+# Local PostgreSQL data
+pgdata/
+
+# Temporary files
+tmp/
+*.tmp
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
