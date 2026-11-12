@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE tasks (
+CREATE TABLE public.tasks (
 	id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 	name VARCHAR(128) NOT NULL,
 	description TEXT NOT NULL,
@@ -9,4 +9,4 @@ CREATE TABLE tasks (
 );
 
 -- +goose Down
-DROP TABLE tasks;
+DROP TABLE public.tasks;
