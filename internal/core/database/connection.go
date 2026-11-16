@@ -14,7 +14,7 @@ type DataBase struct {
 	conn *pgx.Conn
 }
 
-func CreateConnection(ctx context.Context) (*DataBase, error) {
+func New(ctx context.Context) (*DataBase, error) {
 	conn, err := pgx.Connect(ctx, os.Getenv("CONN_STRING"))
 	if err != nil {
 		return &DataBase{}, err
