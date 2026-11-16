@@ -2,25 +2,34 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"go.uber.org/zap"
 )
 
 type DataBase struct {
-	ctx  context.Context
-	conn *pgx.Conn
+	ctx    context.Context
+	conn   *pgx.Conn
+	logger *zap.Logger
 }
 
-func CreateConnection(ctx context.Context) (*DataBase, error) {
+func CreateConnection(ctx context.Context, logger *zap.Logger) (*DataBase, error) {
 	conn, err := pgx.Connect(ctx, os.Getenv("CONN_STRING"))
 	if err != nil {
+		logger.Error(
+			"Error connect to database",
+			zap.Error(err),
+		)
 		return &DataBase{}, err
 	}
 
 	if err = conn.Ping(ctx); err != nil {
+		logger.Error(
+			"Error ping database",
+			zap.Error(err),
+		)
 		return &DataBase{}, err
 	}
 
@@ -31,15 +40,19 @@ func CreateConnection(ctx context.Context) (*DataBase, error) {
 		defer cancel()
 
 		if err := conn.Close(closeDbCtx); err != nil {
-			fmt.Println("Попытка закрытия подключения завершилась неудачно: ", err)
+			logger.Error(
+				"The attempt to close the connection failed",
+				zap.Error(err),
+			)
 			return
 		}
 
-		fmt.Println("Подключение успешно закрыто")
+		logger.Info("Connection closed successfully")
 	}()
 
 	return &DataBase{
-		ctx:  ctx,
-		conn: conn,
+		ctx:    ctx,
+		conn:   conn,
+		logger: logger,
 	}, nil
 }
