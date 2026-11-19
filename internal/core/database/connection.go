@@ -15,14 +15,19 @@ type DataBase struct {
 	logger *zap.Logger
 }
 
-func CreateConnection(ctx context.Context, logger *zap.Logger) (*DataBase, error) {
+func CreateConnection(ctx context.Context, logger *zap.Logger) (*DataBase, <-chan error, error) {
+	errCh := make(chan error, 1)
 	conn, err := pgx.Connect(ctx, os.Getenv("CONN_STRING"))
+
+	logger.Info("Connection to database created successfully")
+
 	if err != nil {
 		logger.Error(
 			"Error connect to database",
 			zap.Error(err),
 		)
-		return &DataBase{}, err
+		close(errCh)
+		return &DataBase{}, errCh, err
 	}
 
 	if err = conn.Ping(ctx); err != nil {
@@ -30,20 +35,25 @@ func CreateConnection(ctx context.Context, logger *zap.Logger) (*DataBase, error
 			"Error ping database",
 			zap.Error(err),
 		)
-		return &DataBase{}, err
+		close(errCh)
+		return &DataBase{}, errCh, err
 	}
 
 	go func() {
 		<-ctx.Done()
 
 		closeDbCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+		defer func() {
+			cancel()
+			close(errCh)
+		}()
 
 		if err := conn.Close(closeDbCtx); err != nil {
 			logger.Error(
 				"The attempt to close the connection failed",
 				zap.Error(err),
 			)
+			errCh <- err
 			return
 		}
 
@@ -54,5 +64,5 @@ func CreateConnection(ctx context.Context, logger *zap.Logger) (*DataBase, error
 		ctx:    ctx,
 		conn:   conn,
 		logger: logger,
-	}, nil
+	}, errCh, nil
 }
