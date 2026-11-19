@@ -11,7 +11,7 @@ import (
 
 type DataBase struct {
 	ctx    context.Context
-	conn   *pgx.Conn
+	Conn   *pgx.Conn
 	logger *zap.Logger
 }
 
@@ -62,7 +62,7 @@ func CreateConnection(ctx context.Context, logger *zap.Logger) (*DataBase, <-cha
 
 	return &DataBase{
 		ctx:    ctx,
-		conn:   conn,
+		Conn:   conn,
 		logger: logger,
 	}, errCh, nil
 }
