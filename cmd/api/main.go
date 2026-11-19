@@ -2,22 +2,28 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"sync"
 
 	_ "github.com/joho/godotenv/autoload"
-	"github.com/k0kubun/pp/v3"
 	"github.com/rbx0o/go-todo-api/internal/core/database"
+	"github.com/rbx0o/go-todo-api/internal/core/logger"
 )
 
 func main() {
+	logger := logger.New()
+	logger.Info("Logger started successfully")
 	ctx, ctxCancel := context.WithCancel(context.Background())
 
-	db, err := database.CreateConnection(ctx)
-	if err != nil {
-		fmt.Println(err)
-	}
+	_, errCh, _ := database.CreateConnection(ctx, logger)
 
-	pp.Println(db)
+	wg := sync.WaitGroup{}
+
+	wg.Add(1)
+	go func() {
+		<-errCh
+		wg.Done()
+	}()
 
 	ctxCancel()
+	wg.Wait()
 }
