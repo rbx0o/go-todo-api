@@ -9,6 +9,10 @@ import (
 	"go.uber.org/zap"
 )
 
+type TaskRepoInterface interface {
+	GetAll(context.Context) (map[int64]domain.Task, error)
+}
+
 type taskRepo struct {
 	DB     *database.DataBase
 	logger *zap.Logger
