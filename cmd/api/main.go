@@ -12,9 +12,10 @@ import (
 func main() {
 	logger := logger.New()
 	logger.Info("Logger started successfully")
-	ctx, ctxCancel := context.WithCancel(context.Background())
+	defer logger.Sync()
+	dbConnectionCtx, dbConnectionCtxCancel := context.WithCancel(context.Background())
 
-	_, errCh, _ := database.CreateConnection(ctx, logger)
+	_, errCh, _ := database.CreateConnection(dbConnectionCtx, logger)
 
 	wg := sync.WaitGroup{}
 
@@ -24,6 +25,6 @@ func main() {
 		wg.Done()
 	}()
 
-	ctxCancel()
+	dbConnectionCtxCancel()
 	wg.Wait()
 }
