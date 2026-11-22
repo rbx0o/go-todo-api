@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"os"
 	"time"
 
@@ -14,8 +15,10 @@ type DataBase struct {
 	logger *zap.Logger
 }
 
-func CreateConnection(ctx context.Context, logger *zap.Logger) (*DataBase, <-chan error, error) {
+func CreateConnection(logger *zap.Logger) (*DataBase, <-chan error, error) {
 	errCh := make(chan error, 1)
+	ctx, ctxCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer ctxCancel()
 	conn, err := pgx.Connect(ctx, os.Getenv("CONN_STRING"))
 
 	logger.Info("Connection to database created successfully")
@@ -38,29 +41,30 @@ func CreateConnection(ctx context.Context, logger *zap.Logger) (*DataBase, <-cha
 		return &DataBase{}, errCh, err
 	}
 
-	go func() {
-		<-ctx.Done()
-
-		closeDbCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer func() {
-			cancel()
-			close(errCh)
-		}()
-
-		if err := conn.Close(closeDbCtx); err != nil {
-			logger.Error(
-				"The attempt to close the connection failed",
-				zap.Error(err),
-			)
-			errCh <- err
-			return
-		}
-
-		logger.Info("Connection closed successfully")
-	}()
-
 	return &DataBase{
 		Conn:   conn,
 		logger: logger,
 	}, errCh, nil
+}
+
+func (db *DataBase) Stop() error {
+	ctx, ctxCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer ctxCancel()
+
+	if !db.Conn.IsClosed() {
+		err := db.Conn.Close(ctx)
+		if err != nil {
+			db.logger.Error(
+				"DataBase connection close error",
+				zap.Error(err),
+			)
+			return err
+		}
+
+		db.logger.Info("DataBase stopped successfully")
+		return nil
+	}
+
+	db.logger.Warn("DataBase connection already closed")
+	return errors.New("DataBase connection already closed")
 }
