@@ -31,6 +31,7 @@ func (server *httpServer) Start() <-chan error {
 	chErr := make(chan error, 1)
 
 	go func() {
+		server.logger.Info("HTTP server started successfully")
 		err := server.server.ListenAndServe()
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			chErr <- err

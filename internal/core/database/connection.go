@@ -2,11 +2,12 @@ package database
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"os"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/rbx0o/go-todo-api/internal/core/apperr"
 	"go.uber.org/zap"
 )
 
@@ -15,36 +16,27 @@ type DataBase struct {
 	logger *zap.Logger
 }
 
-func CreateConnection(logger *zap.Logger) (*DataBase, <-chan error, error) {
-	errCh := make(chan error, 1)
+func CreateConnection(logger *zap.Logger) (*DataBase, error) {
 	ctx, ctxCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer ctxCancel()
 	conn, err := pgx.Connect(ctx, os.Getenv("CONN_STRING"))
 
-	logger.Info("Connection to database created successfully")
-
 	if err != nil {
-		logger.Error(
-			"Error connect to database",
-			zap.Error(err),
-		)
-		close(errCh)
-		return &DataBase{}, errCh, err
+		err = fmt.Errorf("connect to PostgreSQL:  %w", err)
+		return &DataBase{}, err
 	}
 
+	logger.Info("connection to database created successfully")
+
 	if err = conn.Ping(ctx); err != nil {
-		logger.Error(
-			"Error ping database",
-			zap.Error(err),
-		)
-		close(errCh)
-		return &DataBase{}, errCh, err
+		err = fmt.Errorf("ping database: %w", err)
+		return &DataBase{}, err
 	}
 
 	return &DataBase{
 		Conn:   conn,
 		logger: logger,
-	}, errCh, nil
+	}, nil
 }
 
 func (db *DataBase) Stop() error {
@@ -54,17 +46,13 @@ func (db *DataBase) Stop() error {
 	if !db.Conn.IsClosed() {
 		err := db.Conn.Close(ctx)
 		if err != nil {
-			db.logger.Error(
-				"DataBase connection close error",
-				zap.Error(err),
-			)
+			err = fmt.Errorf("database connection close: %w", err)
 			return err
 		}
 
-		db.logger.Info("DataBase stopped successfully")
+		db.logger.Info("database stopped successfully")
 		return nil
+	} else {
+		return apperr.DBConnectionAlreadyClosed
 	}
-
-	db.logger.Warn("DataBase connection already closed")
-	return errors.New("DataBase connection already closed")
 }

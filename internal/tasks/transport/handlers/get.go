@@ -9,6 +9,8 @@ import (
 )
 
 func (h *handler) GetAll(response http.ResponseWriter, request *http.Request) {
+	h.logger.Info("Start GET /tasks endpoint")
+	defer h.logger.Info("End GET /tasks endpoint")
 	ctx := request.Context()
 
 	tmpTasks, err := h.service.GetAll(ctx)
