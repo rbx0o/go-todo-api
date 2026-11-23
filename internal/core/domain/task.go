@@ -28,3 +28,28 @@ func NewTask(
 		finishedTime: finishedTime,
 	}
 }
+
+func (t *Task) Get() struct {
+	ID           int64
+	Name         string
+	Description  string
+	CreatedTime  time.Time
+	IsDone       bool
+	FinishedTime *time.Time
+} {
+	return struct {
+		ID           int64
+		Name         string
+		Description  string
+		CreatedTime  time.Time
+		IsDone       bool
+		FinishedTime *time.Time
+	}{
+		ID:           t.id,
+		Name:         t.name,
+		Description:  t.description,
+		CreatedTime:  t.createdTime,
+		IsDone:       t.isDone,
+		FinishedTime: t.finishedTime,
+	}
+}
